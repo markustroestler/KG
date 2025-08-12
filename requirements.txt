@@ -1,0 +1,13 @@
+rdflib
+jupyterlab
+transformers
+pandas
+pykeen
+openai
+yfinance
+newspaper
+lxml_html_clean
+transformers
+torch
+safetensors
+pyyaml 

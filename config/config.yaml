@@ -1,0 +1,83 @@
+graph: 
+  stocks: data/kg_assets.ttl 
+# how far back to fetch
+
+# equities you want to watch
+stocks:
+  - AAPL
+  - MSFT
+  - TSLA
+  - BAYN.DE
+  - BTC-USD
+
+# market indices to include (yfinance symbols)
+indices:
+  - "^DJI"     # Dow Jones
+  - "^GSPC"    # S&P 500
+  - "^NDX"     # Nasdaq-100
+  
+fetch:
+  lookback_days: 2000
+  interval: "1d"
+
+trend:
+  out: data/kg_trends.ttl
+  append: true
+
+news:
+  count: 100                    # max News pro Ticker (Yahoo)
+  sleep: 0.8                   # Sekunden Pause zwischen Artikeln (Fulltext-Fetch)
+  lang: en                     # Sprache fürs newspaper-Parsing (en/de/…)
+  out_dir: data/news/raw       # Zielordner
+  only_stocks: true            # Indices in watchlist ignorieren (für News)
+  processed_dir: data/news/processed     # dein bestehender Output
+  kg_out: data/kg_news.ttl               # eigenes TTL für News (empfohlen)
+  append: true
+
+features:
+  indicators_out: data/kg_indicators.ttl
+  ma_windows: [20, 50, 200]
+  rsi_period: 14
+  vol_window: 20
+
+fundamentals:
+  out: data/kg_fundamentals.ttl
+  consensus_window_days: 180
+
+reco:
+  trend_window_days: 30      # window for DailyTrend spark analysis
+  news_window_days: 14       # window for news sentiment counts
+  earnings_buffer_days: 5    # penalize if next earnings is within N days
+  weights:
+    trend: 0.4
+    news: 0.3
+    consensus: 0.3
+    penalty_near_earnings: -0.5
+
+report:
+  news_window_days: 30        # Fenster für “interessante” Stocks
+  strong_threshold: 0.6      # Schwelle für strongPos
+
+  # config/config.yaml  (add this block)
+embeddings:
+  seed: 42
+  enabled: true
+  out_dir: data/kge
+  model: ComplEx         # or TransE, DistMult
+  dim: 128
+  epochs: 60
+  batch_size: 1024
+  valid_ratio: 0.05
+  test_ratio: 0.05
+  window_days: 2000        # use last N days of DailyTrend
+  holdout_days: 100       # keep last N days out for testing
+  target_relation: risesWithin_14d   # we'll predict which assets move up on a given date
+  horizon_days: 14
+  target_threshold: 0.01   # 2% Schwelle
+  softmax_temp: 15.0       # Temperatur für Softmax-Kalibrierung (höher = flacher)
+  lr: 0.001
+  early_stopping: true
+  patience: 30
+  relative_delta: 0.0
+
+

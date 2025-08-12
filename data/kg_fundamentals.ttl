@@ -1,0 +1,431 @@
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:AAPL_cons_2025-08-12 a ex:AnalystConsensus ;
+    ex:aboutAsset ex:AAPL ;
+    ex:buy 90 ;
+    ex:hold 61 ;
+    ex:onDate "2025-08-12"^^xsd:date ;
+    ex:sell 6 ;
+    ex:strongBuy 22 ;
+    ex:strongSell 4 ;
+    ex:windowDays 180 .
+
+ex:AAPL_earn_2021-10-28 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "1.24"^^xsd:float ;
+    ex:epsEstimate "1.24"^^xsd:float ;
+    ex:onDate "2021-10-28"^^xsd:date ;
+    ex:surprisePct "0.3"^^xsd:float .
+
+ex:AAPL_earn_2022-01-27 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "2.1"^^xsd:float ;
+    ex:epsEstimate "1.89"^^xsd:float ;
+    ex:onDate "2022-01-27"^^xsd:date ;
+    ex:surprisePct "11.17"^^xsd:float .
+
+ex:AAPL_earn_2022-04-28 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "1.52"^^xsd:float ;
+    ex:epsEstimate "1.43"^^xsd:float ;
+    ex:onDate "2022-04-28"^^xsd:date ;
+    ex:surprisePct "6.44"^^xsd:float .
+
+ex:AAPL_earn_2022-07-28 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "1.2"^^xsd:float ;
+    ex:epsEstimate "1.16"^^xsd:float ;
+    ex:onDate "2022-07-28"^^xsd:date ;
+    ex:surprisePct "3.25"^^xsd:float .
+
+ex:AAPL_earn_2022-10-27 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "1.29"^^xsd:float ;
+    ex:epsEstimate "1.27"^^xsd:float ;
+    ex:onDate "2022-10-27"^^xsd:date ;
+    ex:surprisePct "1.55"^^xsd:float .
+
+ex:AAPL_earn_2023-02-02 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "1.88"^^xsd:float ;
+    ex:epsEstimate "1.94"^^xsd:float ;
+    ex:onDate "2023-02-02"^^xsd:date ;
+    ex:surprisePct "-2.88"^^xsd:float .
+
+ex:AAPL_earn_2023-05-04 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "1.52"^^xsd:float ;
+    ex:epsEstimate "1.43"^^xsd:float ;
+    ex:onDate "2023-05-04"^^xsd:date ;
+    ex:surprisePct "6.03"^^xsd:float .
+
+ex:AAPL_earn_2023-08-03 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "1.26"^^xsd:float ;
+    ex:epsEstimate "1.19"^^xsd:float ;
+    ex:onDate "2023-08-03"^^xsd:date ;
+    ex:surprisePct "5.49"^^xsd:float .
+
+ex:AAPL_earn_2023-11-02 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "1.46"^^xsd:float ;
+    ex:epsEstimate "1.39"^^xsd:float ;
+    ex:onDate "2023-11-02"^^xsd:date ;
+    ex:surprisePct "4.92"^^xsd:float .
+
+ex:AAPL_earn_2024-02-01 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "2.18"^^xsd:float ;
+    ex:epsEstimate "2.1"^^xsd:float ;
+    ex:onDate "2024-02-01"^^xsd:date ;
+    ex:surprisePct "3.9"^^xsd:float .
+
+ex:AAPL_earn_2024-05-02 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "1.53"^^xsd:float ;
+    ex:epsEstimate "1.5"^^xsd:float ;
+    ex:onDate "2024-05-02"^^xsd:date ;
+    ex:surprisePct "1.97"^^xsd:float .
+
+ex:AAPL_earn_2024-08-01 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "1.4"^^xsd:float ;
+    ex:epsEstimate "1.35"^^xsd:float ;
+    ex:onDate "2024-08-01"^^xsd:date ;
+    ex:surprisePct "3.99"^^xsd:float .
+
+ex:AAPL_earn_2024-10-31 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "1.64"^^xsd:float ;
+    ex:epsEstimate "1.6"^^xsd:float ;
+    ex:onDate "2024-10-31"^^xsd:date ;
+    ex:surprisePct "2.35"^^xsd:float .
+
+ex:AAPL_earn_2025-01-30 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "2.4"^^xsd:float ;
+    ex:epsEstimate "2.35"^^xsd:float ;
+    ex:onDate "2025-01-30"^^xsd:date ;
+    ex:surprisePct "2.15"^^xsd:float .
+
+ex:AAPL_earn_2025-02-27 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:onDate "2025-02-27"^^xsd:date .
+
+ex:AAPL_earn_2025-05-01 a ex:EarningsEvent ;
+    ex:aboutAsset ex:AAPL ;
+    ex:epsActual "1.65"^^xsd:float ;
+    ex:epsEstimate "1.63"^^xsd:float ;
+    ex:onDate "2025-05-01"^^xsd:date ;
+    ex:surprisePct "1.41"^^xsd:float .
+
+ex:AAPL_fund_2025-08-12 a ex:FundamentalSnapshot ;
+    ex:aboutAsset ex:AAPL ;
+    ex:marketCap 3.517526e+12 ;
+    ex:onDate "2025-08-12"^^xsd:date .
+
+ex:BAYN_DE_cons_2025-08-12 a ex:AnalystConsensus ;
+    ex:aboutAsset ex:BAYN_DE ;
+    ex:buy 15 ;
+    ex:hold 49 ;
+    ex:onDate "2025-08-12"^^xsd:date ;
+    ex:sell 0 ;
+    ex:strongBuy 14 ;
+    ex:strongSell 0 ;
+    ex:windowDays 180 .
+
+ex:BAYN_DE_earn_2025-03-05 a ex:EarningsEvent ;
+    ex:aboutAsset ex:BAYN_DE ;
+    ex:onDate "2025-03-05"^^xsd:date .
+
+ex:BAYN_DE_earn_2025-04-25 a ex:EarningsEvent ;
+    ex:aboutAsset ex:BAYN_DE ;
+    ex:onDate "2025-04-25"^^xsd:date .
+
+ex:BAYN_DE_earn_2025-05-13 a ex:EarningsEvent ;
+    ex:aboutAsset ex:BAYN_DE ;
+    ex:onDate "2025-05-13"^^xsd:date .
+
+ex:BAYN_DE_fund_2025-08-12 a ex:FundamentalSnapshot ;
+    ex:aboutAsset ex:BAYN_DE ;
+    ex:marketCap 2.535882e+10 ;
+    ex:onDate "2025-08-12"^^xsd:date .
+
+ex:BTC_USD_fund_2025-08-12 a ex:FundamentalSnapshot ;
+    ex:aboutAsset ex:BTC_USD ;
+    ex:onDate "2025-08-12"^^xsd:date .
+
+ex:DividendEvent a ex:Class .
+
+ex:MSFT_cons_2025-08-12 a ex:AnalystConsensus ;
+    ex:aboutAsset ex:MSFT ;
+    ex:buy 168 ;
+    ex:hold 16 ;
+    ex:onDate "2025-08-12"^^xsd:date ;
+    ex:sell 0 ;
+    ex:strongBuy 51 ;
+    ex:strongSell 0 ;
+    ex:windowDays 180 .
+
+ex:MSFT_earn_2021-10-26 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "2.27"^^xsd:float ;
+    ex:epsEstimate "2.07"^^xsd:float ;
+    ex:onDate "2021-10-26"^^xsd:date ;
+    ex:surprisePct "9.41"^^xsd:float .
+
+ex:MSFT_earn_2022-01-25 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "2.48"^^xsd:float ;
+    ex:epsEstimate "2.31"^^xsd:float ;
+    ex:onDate "2022-01-25"^^xsd:date ;
+    ex:surprisePct "7.25"^^xsd:float .
+
+ex:MSFT_earn_2022-04-26 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "2.22"^^xsd:float ;
+    ex:epsEstimate "2.19"^^xsd:float ;
+    ex:onDate "2022-04-26"^^xsd:date ;
+    ex:surprisePct "1.6"^^xsd:float .
+
+ex:MSFT_earn_2022-07-26 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "2.23"^^xsd:float ;
+    ex:epsEstimate "2.29"^^xsd:float ;
+    ex:onDate "2022-07-26"^^xsd:date ;
+    ex:surprisePct "-2.74"^^xsd:float .
+
+ex:MSFT_earn_2022-10-25 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "2.35"^^xsd:float ;
+    ex:epsEstimate "2.3"^^xsd:float ;
+    ex:onDate "2022-10-25"^^xsd:date ;
+    ex:surprisePct "2.05"^^xsd:float .
+
+ex:MSFT_earn_2023-01-24 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "2.32"^^xsd:float ;
+    ex:epsEstimate "2.29"^^xsd:float ;
+    ex:onDate "2023-01-24"^^xsd:date ;
+    ex:surprisePct "1.09"^^xsd:float .
+
+ex:MSFT_earn_2023-04-25 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "2.45"^^xsd:float ;
+    ex:epsEstimate "2.23"^^xsd:float ;
+    ex:onDate "2023-04-25"^^xsd:date ;
+    ex:surprisePct "9.81"^^xsd:float .
+
+ex:MSFT_earn_2023-07-25 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "2.69"^^xsd:float ;
+    ex:epsEstimate "2.55"^^xsd:float ;
+    ex:onDate "2023-07-25"^^xsd:date ;
+    ex:surprisePct "5.49"^^xsd:float .
+
+ex:MSFT_earn_2023-10-24 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "2.99"^^xsd:float ;
+    ex:epsEstimate "2.65"^^xsd:float ;
+    ex:onDate "2023-10-24"^^xsd:date ;
+    ex:surprisePct "12.7"^^xsd:float .
+
+ex:MSFT_earn_2024-01-30 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "2.93"^^xsd:float ;
+    ex:epsEstimate "2.78"^^xsd:float ;
+    ex:onDate "2024-01-30"^^xsd:date ;
+    ex:surprisePct "5.34"^^xsd:float .
+
+ex:MSFT_earn_2024-04-25 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "2.94"^^xsd:float ;
+    ex:epsEstimate "2.82"^^xsd:float ;
+    ex:onDate "2024-04-25"^^xsd:date ;
+    ex:surprisePct "4.32"^^xsd:float .
+
+ex:MSFT_earn_2024-07-30 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "2.95"^^xsd:float ;
+    ex:epsEstimate "2.93"^^xsd:float ;
+    ex:onDate "2024-07-30"^^xsd:date ;
+    ex:surprisePct "0.54"^^xsd:float .
+
+ex:MSFT_earn_2024-10-30 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "3.3"^^xsd:float ;
+    ex:epsEstimate "3.1"^^xsd:float ;
+    ex:onDate "2024-10-30"^^xsd:date ;
+    ex:surprisePct "6.52"^^xsd:float .
+
+ex:MSFT_earn_2024-12-06 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:onDate "2024-12-06"^^xsd:date .
+
+ex:MSFT_earn_2025-01-29 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "3.23"^^xsd:float ;
+    ex:epsEstimate "3.11"^^xsd:float ;
+    ex:onDate "2025-01-29"^^xsd:date ;
+    ex:surprisePct "3.82"^^xsd:float .
+
+ex:MSFT_earn_2025-04-30 a ex:EarningsEvent ;
+    ex:aboutAsset ex:MSFT ;
+    ex:epsActual "3.46"^^xsd:float ;
+    ex:epsEstimate "3.22"^^xsd:float ;
+    ex:onDate "2025-04-30"^^xsd:date ;
+    ex:surprisePct "7.45"^^xsd:float .
+
+ex:MSFT_fund_2025-08-12 a ex:FundamentalSnapshot ;
+    ex:aboutAsset ex:MSFT ;
+    ex:marketCap 3.90457e+12 ;
+    ex:onDate "2025-08-12"^^xsd:date .
+
+ex:SplitEvent a ex:Class .
+
+ex:TSLA_cons_2025-08-12 a ex:AnalystConsensus ;
+    ex:aboutAsset ex:TSLA ;
+    ex:buy 56 ;
+    ex:hold 66 ;
+    ex:onDate "2025-08-12"^^xsd:date ;
+    ex:sell 29 ;
+    ex:strongBuy 24 ;
+    ex:strongSell 12 ;
+    ex:windowDays 180 .
+
+ex:TSLA_earn_2021-07-26 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "0.48"^^xsd:float ;
+    ex:epsEstimate "0.33"^^xsd:float ;
+    ex:onDate "2021-07-26"^^xsd:date ;
+    ex:surprisePct "47.7"^^xsd:float .
+
+ex:TSLA_earn_2021-10-20 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "0.62"^^xsd:float ;
+    ex:epsEstimate "0.53"^^xsd:float ;
+    ex:onDate "2021-10-20"^^xsd:date ;
+    ex:surprisePct "16.68"^^xsd:float .
+
+ex:TSLA_earn_2022-01-26 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "0.85"^^xsd:float ;
+    ex:epsEstimate "0.79"^^xsd:float ;
+    ex:onDate "2022-01-26"^^xsd:date ;
+    ex:surprisePct "7.15"^^xsd:float .
+
+ex:TSLA_earn_2022-04-20 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "1.07"^^xsd:float ;
+    ex:epsEstimate "0.75"^^xsd:float ;
+    ex:onDate "2022-04-20"^^xsd:date ;
+    ex:surprisePct "42.56"^^xsd:float .
+
+ex:TSLA_earn_2022-07-20 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "0.76"^^xsd:float ;
+    ex:epsEstimate "0.6"^^xsd:float ;
+    ex:onDate "2022-07-20"^^xsd:date ;
+    ex:surprisePct "25.11"^^xsd:float .
+
+ex:TSLA_earn_2022-10-19 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "1.05"^^xsd:float ;
+    ex:epsEstimate "0.99"^^xsd:float ;
+    ex:onDate "2022-10-19"^^xsd:date ;
+    ex:surprisePct "5.7"^^xsd:float .
+
+ex:TSLA_earn_2023-01-25 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "1.19"^^xsd:float ;
+    ex:epsEstimate "1.13"^^xsd:float ;
+    ex:onDate "2023-01-25"^^xsd:date ;
+    ex:surprisePct "5.55"^^xsd:float .
+
+ex:TSLA_earn_2023-04-19 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "0.85"^^xsd:float ;
+    ex:epsEstimate "0.85"^^xsd:float ;
+    ex:onDate "2023-04-19"^^xsd:date ;
+    ex:surprisePct "-0.04"^^xsd:float .
+
+ex:TSLA_earn_2023-07-19 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "0.91"^^xsd:float ;
+    ex:epsEstimate "0.82"^^xsd:float ;
+    ex:onDate "2023-07-19"^^xsd:date ;
+    ex:surprisePct "10.63"^^xsd:float .
+
+ex:TSLA_earn_2023-10-18 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "0.66"^^xsd:float ;
+    ex:epsEstimate "0.72"^^xsd:float ;
+    ex:onDate "2023-10-18"^^xsd:date ;
+    ex:surprisePct "-8.25"^^xsd:float .
+
+ex:TSLA_earn_2024-01-24 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "0.71"^^xsd:float ;
+    ex:epsEstimate "0.74"^^xsd:float ;
+    ex:onDate "2024-01-24"^^xsd:date ;
+    ex:surprisePct "-4.39"^^xsd:float .
+
+ex:TSLA_earn_2024-04-23 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "0.45"^^xsd:float ;
+    ex:epsEstimate "0.51"^^xsd:float ;
+    ex:onDate "2024-04-23"^^xsd:date ;
+    ex:surprisePct "-12.04"^^xsd:float .
+
+ex:TSLA_earn_2024-07-23 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "0.52"^^xsd:float ;
+    ex:epsEstimate "0.62"^^xsd:float ;
+    ex:onDate "2024-07-23"^^xsd:date ;
+    ex:surprisePct "-16.62"^^xsd:float .
+
+ex:TSLA_earn_2024-10-23 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "0.72"^^xsd:float ;
+    ex:epsEstimate "0.58"^^xsd:float ;
+    ex:onDate "2024-10-23"^^xsd:date ;
+    ex:surprisePct "23.24"^^xsd:float .
+
+ex:TSLA_earn_2025-01-29 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "0.73"^^xsd:float ;
+    ex:epsEstimate "0.76"^^xsd:float ;
+    ex:onDate "2025-01-29"^^xsd:date ;
+    ex:surprisePct "-4.25"^^xsd:float .
+
+ex:TSLA_earn_2025-04-22 a ex:EarningsEvent ;
+    ex:aboutAsset ex:TSLA ;
+    ex:epsActual "0.27"^^xsd:float ;
+    ex:epsEstimate "0.39"^^xsd:float ;
+    ex:onDate "2025-04-22"^^xsd:date ;
+    ex:surprisePct "-30.98"^^xsd:float .
+
+ex:TSLA_fund_2025-08-12 a ex:FundamentalSnapshot ;
+    ex:aboutAsset ex:TSLA ;
+    ex:marketCap 1.081526e+12 ;
+    ex:onDate "2025-08-12"^^xsd:date .
+
+ex:AnalystConsensus a ex:Class .
+
+ex:BAYN_DE ex:industry "Drug Manufacturers - General"^^xsd:string ;
+    ex:sector "Healthcare"^^xsd:string .
+
+ex:FundamentalSnapshot a ex:Class .
+
+ex:AAPL ex:industry "Consumer Electronics"^^xsd:string ;
+    ex:sector "Technology"^^xsd:string .
+
+ex:MSFT ex:industry "Software - Infrastructure"^^xsd:string ;
+    ex:sector "Technology"^^xsd:string .
+
+ex:TSLA ex:industry "Auto Manufacturers"^^xsd:string ;
+    ex:sector "Consumer Cyclical"^^xsd:string .
+
+ex:EarningsEvent a ex:Class .
+

@@ -1,0 +1,16 @@
+FROM hf.co/second-state/fingpt-mt-llama-3-8b-lora-gguf:q5_k_s
+
+# Good defaults for classification
+PARAMETER temperature 0
+PARAMETER num_ctx 2048
+PARAMETER repeat_penalty 1.1
+
+TEMPLATE """
+You are a financial classifier. Return **ONLY** compact JSON with keys:
+sentiment: one of ["negative","neutral","positive"]
+rationale: 1–2 sentences
+impact: integer 0–10 (how strong the likely market impact is)
+
+INPUT:
+{{ .Prompt }}
+"""
