@@ -188,8 +188,8 @@ def main():
                 continue  # optional: nur klare up/down Beispiele
 
             A = URIRef(EX[tk]); D = _d_ent(d)
-            # triples.add((_short(A), "ex:instanceOf", "ex:Asset"))
-            # triples.add((_short(D), "ex:instanceOf", "ex:Day"))
+            triples.add((_short(A), "ex:instanceOf", "ex:Asset"))
+            triples.add((_short(D), "ex:instanceOf", "ex:Day"))
 
             # Zielrelation
             rel = "ex:risesWithin_%dd" % H if y == "up" else "ex:fallsWithin_%dd" % H
@@ -199,10 +199,10 @@ def main():
             f = features_for(gA, gN, gI, gF, tk, d, closes)
             _emit_feature_edges(triples, _short(A), _short(D), f)
 
-    # Tag-Entitäten komplettieren für Sichtbarkeit
-    # for h, r, t in list(triples):
-    #     if t.startswith("ex:d_"):
-    #         triples.add((t, "ex:instanceOf", "ex:Day"))
+   # Tag-Entitäten komplettieren für Sichtbarkeit
+    for h, r, t in list(triples):
+        if t.startswith("ex:d_"):
+            triples.add((t, "ex:instanceOf", "ex:Day"))
 
     # Splits (zeitbasiert)
     all_days = sorted({t for _,_,t in triples if t.startswith("ex:d_")})
@@ -215,24 +215,34 @@ def main():
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # day_typings = {(t, "ex:instanceOf", "ex:Day")
-    #            for _,_,t in triples if t.startswith("ex:d_")}
+    day_typings = {(t, "ex:instanceOf", "ex:Day")
+               for _,_,t in triples if t.startswith("ex:d_")}
 
-    # today = date.today()
-    # day_typings.add((f"ex:d_{today.isoformat()}", "ex:instanceOf", "ex:Day"))
+    today = date.today()
+    day_typings.add((f"ex:d_{today.isoformat()}", "ex:instanceOf", "ex:Day"))
+    asset_typings = {(f"ex:{tk}", "ex:instanceOf", "ex:Asset") for tk in tickers}
 
     # 3) Beim Schreiben: alle Day/Asset-Typings NUR in train.tsv mitschreiben
-    def write(fname, days_set):
+    def write(fname, days_set, include_typings=False):
         p = out_dir / fname
         with p.open("w", encoding="utf-8") as f:
+            if include_typings and fname == "train.tsv":
+                for h,r,t in sorted(day_typings):
+                    f.write(f"{h}\t{r}\t{t}\n")
+                for h,r,t in sorted(asset_typings):
+                    f.write(f"{h}\t{r}\t{t}\n")
             for h,r,t in sorted(triples):
                 if t in days_set:
                     f.write(f"{h}\t{r}\t{t}\n")
-        return p
 
-    p_train = write("train.tsv", train_days)
+    p_train = write("train.tsv", train_days, include_typings=True)
     p_valid = write("valid.tsv", valid_days)
     p_test  = write("test.tsv",  test_days)
+
+    # in TXT for debug
+    p_trainTXT = write("train.txt", train_days, include_typings=True)
+    p_validTXT = write("valid.txt", valid_days)
+    p_testTXT  = write("test.txt",  test_days)
 
     print_relation_counts("ALL", triples)
 

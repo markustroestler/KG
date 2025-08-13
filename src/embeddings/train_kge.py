@@ -9,7 +9,7 @@ def _cfg():
 def _set_seeds(s):
     os.environ["PYTHONHASHSEED"] = str(s)
     random.seed(s); np.random.seed(s); torch.manual_seed(s)
-    torch.use_deterministic_algorithms(True)
+    torch.use_deterministic_algorithms(False)
 
 def main():
     # pip install pykeen
@@ -36,35 +36,6 @@ def main():
     test_path = out / "test.tsv"
     val = str(val_path) if val_path.exists() and val_path.stat().st_size > 0 else None
     tst = str(test_path) if test_path.exists() and test_path.stat().st_size > 0 else None
-
-    # result = pipeline(
-    #     training=str(out / "train.tsv"),
-    #     validation=val,
-    #     testing=tst,
-    #     model=e.get("model","ComplEx"),
-    #     model_kwargs={"embedding_dim": int(e.get("dim",128))},
-    #     optimizer="Adam",
-    #     optimizer_kwargs={"lr": lr},
-    #     loss="SoftplusLoss",
-    #     training_kwargs={
-    #         "num_epochs": int(e.get("epochs",60)),
-    #         "batch_size": int(e.get("batch_size",1024)),
-    #         "num_workers": 0,             
-    #         "drop_last": False,
-    #         "pin_memory": False,
-    #     },
-    #     negative_sampler="basic",
-    #     random_seed=seed,
-    #     # Evaluator + Early Stopping
-    #     evaluator="RankBasedEvaluator",
-    #     stopper="early" if (use_es and val) else None,
-    #     stopper_kwargs={
-    #         "frequency": 1,
-    #         "patience": patience,
-    #         "relative_delta": rel_delta,           # min. relative Verbesserung
-    #         "metric": "mean_reciprocal_rank",     # auf Valid-MRR stoppen
-    #     } if (use_es and val) else None,
-    # )
 
     result = pipeline(
     training=str(out / "train.tsv"),

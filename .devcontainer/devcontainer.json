@@ -3,11 +3,21 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "runArgs": [
+    "--gpus=all"
+  ],
+  "containerEnv": {
+    "NVIDIA_VISIBLE_DEVICES": "all",
+    "NVIDIA_DRIVER_CAPABILITIES": "compute,utility"
+  },
   "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind",
   "workspaceFolder": "/app",
   "customizations": {
     "vscode": {
-      "extensions": ["ms-python.python", "ms-toolsai.jupyter"],
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.jupyter"
+      ],
       "settings": {
         "terminal.integrated.shell.linux": "/bin/bash"
       }
