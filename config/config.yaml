@@ -9,6 +9,22 @@ stocks:
   - TSLA
   - BAYN.DE
   - BTC-USD
+  - NVDA
+  - AMZN
+  - GOOGL
+  - META
+  - AVGO
+  - AMD
+  - INTC
+  - ORCL
+  - ADBE
+  - CRM
+  - NFLX
+  - IBM
+  - TSM
+  - MU
+  - QCOM
+  - ASML 
 
 # market indices to include (yfinance symbols)
 indices:
@@ -25,7 +41,7 @@ trend:
   append: true
 
 news:
-  count: 100                    # max News pro Ticker (Yahoo)
+  count: 200                    # max News pro Ticker (Yahoo)
   sleep: 0.8                   # Sekunden Pause zwischen Artikeln (Fulltext-Fetch)
   lang: en                     # Sprache fürs newspaper-Parsing (en/de/…)
   out_dir: data/news/raw       # Zielordner
@@ -69,7 +85,7 @@ embeddings:
   batch_size: 1024
   valid_ratio: 0.05
   test_ratio: 0.05
-  window_days: 2000        # use last N days of DailyTrend
+  window_days: 500        # use last N days of DailyTrend
   holdout_days: 100       # keep last N days out for testing
   target_relation: risesWithin_14d   # we'll predict which assets move up on a given date
   horizon_days: 14

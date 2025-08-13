@@ -1,41 +1,37 @@
-# embeddings/export_triples.py (erweitert)
+# export_triples.py – kompakt & MRR-orientiert
 from pathlib import Path
 from datetime import date, timedelta
-import yaml, math
-from rdflib import Graph, Namespace, URIRef, RDF, Literal
+import yaml, math, random
+from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import XSD
-from collections import Counter
 
+random.seed(42)
 EX = Namespace("http://example.org/")
 
+# -------------------- Config / Utils --------------------
 def _cfg():
-    return yaml.safe_load(Path("config/config.yaml").read_text(encoding="utf-8")) or {}
-
-def _d_ent(d: date) -> URIRef:
-    return URIRef(EX[f"d_{d.isoformat()}"])
+    try:
+        return yaml.safe_load(Path("config/config.yaml").read_text(encoding="utf-8")) or {}
+    except FileNotFoundError:
+        return {}
 
 def _short(u: URIRef | str) -> str:
-    base = str(EX); s = str(u)
+    s = str(u); base = str(EX)
     return "ex:" + s[len(base):] if s.startswith(base) else s
 
-def _emit_feature_edges(triples, A_short: str, D_short: str, f: dict):
-    def add(rel: str): triples.add((A_short, rel, D_short))
-    add(f"ex:hasTrend5d_{f['trend5d'].replace('trend_','')}")
-    add(f"ex:hasNewsPos7d_{f['npos'].replace('npos_','')}")
-    add(f"ex:hasNewsNeg7d_{f['nneg'].replace('nneg_','')}")
-    add(f"ex:hasRSI_{f['rsi'].replace('rsi_','')}")
-    add(f"ex:hasVol_{f['vol'].replace('vol_','')}")
-    # add(f"ex:hasConsensus_{f['cons'].replace('cons_','')}")
-
-
-# ---------- Bucketing ----------
-def bucket(val: float | None, cuts: list[float], labels: list[str]) -> str:
-    if val is None or math.isnan(val): return labels[0]
+def bucket_cont(x: float | None, cuts: list[float], labels: list[str]) -> str:
+    if x is None or math.isnan(x): return labels[0]
     for c, lab in zip(cuts, labels):
-        if val <= c: return lab
+        if x <= c: return lab
     return labels[-1]
 
-# ---------- Queries ----------
+def bucket_count(n: int) -> str:
+    if n <= 0: return "0"
+    if n <= 2: return "1_2"
+    if n <= 5: return "3_5"
+    return "6p"
+
+# -------------------- Queries --------------------
 def q_prices_for_asset(g: Graph, tk: str):
     q = f"""PREFIX ex:<http://example.org/>
     SELECT ?d ?c WHERE {{
@@ -47,24 +43,12 @@ def q_prices_for_asset(g: Graph, tk: str):
         out.append((d, float(r.c)))
     return out
 
-def q_news_counts(g: Graph, tk: str, d: date, win: int):
-    q = f"""PREFIX ex:<http://example.org/>
-    SELECT ?sent (COUNT(*) AS ?n) WHERE {{
-      ?n a ex:News ; ex:aboutAsset ex:{tk} ; ex:publishedDate ?pd ; ex:sentiment ?sent .
-      FILTER (?pd >= "{(d - timedelta(days=win-1)).isoformat()}"^^xsd:date && ?pd <= "{d.isoformat()}"^^xsd:date)
-    }} GROUP BY ?sent"""
-    pos = neg = 0
-    for r in g.query(q, initNs={"xsd": XSD}):
-        s = str(r.sent).split("/")[-1].lower()  # Positive/Negative/Neutral
-        n = int(r.n.toPython())
-        if "positive" in s: pos += n
-        elif "negative" in s: neg += n
-    return pos, neg
-
-def q_indicators_on(g: Graph, tk: str, d: date):
+def q_indicators_on(g: Graph | None, tk: str, d: date):
+    if g is None: return None, None
     q = f"""PREFIX ex:<http://example.org/>
     SELECT ?rsi ?vol WHERE {{
-      ?di a ex:DailyIndicator ; ex:aboutAsset ex:{tk} ; ex:onDate "{d.isoformat()}"^^xsd:date .
+      ?di a ex:DailyIndicator ; ex:aboutAsset ex:{tk} ;
+          ex:onDate "{d.isoformat()}"^^xsd:date .
       OPTIONAL {{ ?di ex:rsi14 ?rsi. }} OPTIONAL {{ ?di ex:vol20 ?vol. }}
     }}"""
     rsi = vol = None
@@ -73,55 +57,85 @@ def q_indicators_on(g: Graph, tk: str, d: date):
         vol = float(r.vol) if r.vol else None
     return rsi, vol
 
-def q_consensus_latest_on_or_before(g: Graph, tk: str, d: date):
-    q = f"""PREFIX ex:<http://example.org/>
-    SELECT ?sb ?b ?h ?s ?ss ?on WHERE {{
-      ?c a ex:AnalystConsensus ; ex:aboutAsset ex:{tk} ; ex:onDate ?on .
-      OPTIONAL {{ ?c ex:strongBuy ?sb }} OPTIONAL {{ ?c ex:buy ?b }}
-      OPTIONAL {{ ?c ex:hold ?h }}       OPTIONAL {{ ?c ex:sell ?s }}
-      OPTIONAL {{ ?c ex:strongSell ?ss }}
-      FILTER (?on <= "{d.isoformat()}"^^xsd:date)
-    }} ORDER BY DESC(?on) LIMIT 1"""
+def q_first_news_date(g: Graph | None, tk: str):
+    if g is None: return None
+    q = f"""PREFIX ex:<http://example.org/> PREFIX xsd:<http://www.w3.org/2001/XMLSchema#>
+    SELECT (MIN(?d) AS ?minD) WHERE {{
+      {{ ?news a ex:News ; ex:aboutAsset ex:{tk} . }}
+      UNION {{ ex:{tk} ex:hasNews ?news . }}
+      OPTIONAL {{ ?news ex:publishedDate ?pd_d . }}
+      OPTIONAL {{ ?news ex:publishedAt  ?pd_dt . BIND(xsd:date(?pd_dt) AS ?pd_dt_d) }}
+      BIND(COALESCE(?pd_d, ?pd_dt_d) AS ?d)
+      FILTER(bound(?d))
+    }}"""
     for r in g.query(q, initNs={"xsd": XSD}):
-        vals = {k: int((getattr(r, k) or 0)) for k in ["sb","b","h","s","ss"]}
-        tot = sum(vals.values()) or 1
-        score = (2*vals["sb"] + 1*vals["b"] - 1*vals["s"] - 2*vals["ss"]) / tot  # grob: Buy(+)…Sell(−)
-        lab = "cons_buy" if score > 0.2 else "cons_sell" if score < -0.2 else "cons_hold"
-        return lab
-    return "cons_hold"
+        if r.minD:
+            v = r.minD.toPython()
+            return v.date() if hasattr(v, "date") else v
+    return None
 
-# ---------- Features + Labels ----------
-def features_for(g_assets: Graph, g_news: Graph, g_ind: Graph, g_fund: Graph, tk: str, d: date, closes_by_day: dict):
-    # Trend 5d (über Close)
-    def trend5d():
-        back = [closes_by_day.get(d - timedelta(days=i)) for i in range(0,6)]
-        back = [x for x in back if x is not None]
-        if len(back) < 2: return "trend_flat"
-        if back[-1] > back[0]: return "trend_up"
-        if back[-1] < back[0]: return "trend_down"
-        return "trend_flat"
+def q_news_stats(g: Graph | None, tk: str, d: date, win: int = 7):
+    # zählt pos/neg/neutral im Fenster [d-(win-1), d]
+    if g is None:
+        return {"pos": 0, "neg": 0, "neu": 0, "tot": 0}
+    q = f"""PREFIX ex:<http://example.org/> PREFIX xsd:<http://www.w3.org/2001/XMLSchema#>
+    SELECT ?sent (COUNT(*) AS ?n) WHERE {{
+      {{ ?news a ex:News ; ex:aboutAsset ex:{tk} . }}
+      UNION {{ ex:{tk} ex:hasNews ?news . }}
+      OPTIONAL {{ ?news ex:publishedDate ?pd_d . }}
+      OPTIONAL {{ ?news ex:publishedAt  ?pd_dt . BIND(xsd:date(?pd_dt) AS ?pd_dt_d) }}
+      BIND(COALESCE(?pd_d, ?pd_dt_d) AS ?pdate)
+      FILTER (?pdate >= "{(d - timedelta(days=win-1)).isoformat()}"^^xsd:date &&
+              ?pdate <= "{d.isoformat()}"^^xsd:date)
+      OPTIONAL {{ ?news ex:sentiment ?sent . }}
+    }} GROUP BY ?sent"""
+    pos = neg = neu = tot = 0
+    for r in g.query(q, initNs={"xsd": XSD}):
+        c = int(r.n.toPython()); tot += c
+        s = (str(r.sent).lower() if r.sent else "")
+        if "positive" in s: pos += c
+        elif "negative" in s: neg += c
+        elif "neutral"  in s: neu += c
+    return {"pos": pos, "neg": neg, "neu": neu, "tot": tot}
 
-    # News counts (7d)
-    pos7, neg7 = q_news_counts(g_news, tk, d, 7)
-    npos = bucket(pos7, [0,2,5], ["npos_0","npos_1_2","npos_3_5","npos_6p"])
-    nneg = bucket(neg7, [0,2,5], ["nneg_0","nneg_1_2","nneg_3_5","nneg_6p"])
+# -------------------- Features & Label --------------------
+def news_coverage_flag(first_news_date: date | None, d: date, win: int) -> str:
+    if not first_news_date:
+        return "none"
+    return "full" if (d - timedelta(days=win-1)) >= first_news_date else "partial"
 
-    # RSI/Vol Buckets
-    rsi, vol = q_indicators_on(g_ind, tk, d)
-    rsi_b = ("rsi_low" if (rsi or 0) < 30 else "rsi_high" if (rsi or 0) > 70 else "rsi_mid")
-    vol_b = bucket(vol if vol is not None else float("nan"), [0.01,0.02,0.04], ["vol_low","vol_mid","vol_high","vol_very_high"])
+def features_for(gN: Graph | None, gI: Graph | None,
+                 tk: str, d: date, closes_by_day: dict, first_news_date: date | None, win: int):
+    # Trend 5d (auf Close)
+    back = [closes_by_day.get(d - timedelta(days=i)) for i in range(0, 6)]
+    back = [x for x in back if x is not None]
+    if len(back) < 2:
+        trend = "flat"
+    else:
+        trend = "up" if back[-1] > back[0] else "down" if back[-1] < back[0] else "flat"
 
-    # Analystenkonsens
-    # cons_b = q_consensus_latest_on_or_before(g_fund, tk, d)
+    # News: Pos/Neg als Buckets + Coverage
+    ns = q_news_stats(gN, tk, d, win=win)
+    news_pos_b = bucket_count(ns["pos"])   # 0 | 1_2 | 3_5 | 6p
+    news_neg_b = bucket_count(ns["neg"])
+    news_cov   = news_coverage_flag(first_news_date, d, win)
+
+    # RSI / Vol (robust gebucketed)
+    rsi, vol = q_indicators_on(gI, tk, d)
+    rsi_b = "low" if (rsi or 0) < 30 else "high" if (rsi or 0) > 70 else "mid"
+    vol_b = bucket_cont(vol if vol is not None else float("nan"),
+                        [0.01, 0.02, 0.04], ["low", "mid", "high", "very_high"])
 
     return {
-        "trend5d": trend5d(),
-        "npos": npos, "nneg": nneg,
-        "rsi": rsi_b, "vol": vol_b,
-        # "cons": cons_b,
+        "trend5d": trend,
+        "news_pos": news_pos_b,
+        "news_neg": news_neg_b,
+        "news_cov": news_cov,
+        "rsi": rsi_b,
+        "vol": vol_b,
     }
 
-def forward_label(closes_by_day: dict, d: date, H=14, tau=0.02):
+def forward_label(closes_by_day: dict, d: date, H=14, tau=0.01):
     c0 = closes_by_day.get(d); cH = closes_by_day.get(d + timedelta(days=H))
     if c0 is None or cH is None: return None
     ret = (cH / c0) - 1.0
@@ -129,135 +143,138 @@ def forward_label(closes_by_day: dict, d: date, H=14, tau=0.02):
     if ret <= -tau: return "down"
     return None
 
-def print_relation_counts(name, triples):
-    rel_counts = Counter(r for _, r, _ in triples)
-    print(f"\n--- {name} Relation Counts ---")
-    for rel, cnt in rel_counts.most_common():
-        print(f"{rel:35} {cnt}")
-    print(f"Total triples in {name}: {len(triples)}")
-
-def read_tsv(p):
-    return [tuple(line.strip().split("\t")) for line in Path(p).read_text().splitlines() if line.strip()]
-
-
+# -------------------- Build + Write --------------------
 def main():
     cfg = _cfg()
     e = cfg.get("embeddings", {}) or {}
     out_dir = Path(e.get("out_dir", "data/kge"))
     H = int(e.get("horizon_days", 14))
-    tau = float(e.get("target_threshold", 0.02))
-    window_days = int(cfg.get("embeddings", {}).get("window_days", 180))
+    tau = float(e.get("target_threshold", 0.01))
+    window_days = int(e.get("window_days", 365 * 3))
+    win_news = int(e.get("news_window_days", 7))
+    max_class_ratio = e.get("max_class_ratio", 1.0)  # 1.0 = strikt balanciert; >1 erlaubt leichte Mehrheit
 
     # KGs laden
     kg_assets = Path(cfg.get("graph", {}).get("in") or cfg.get("graph", {}).get("out") or "data/kg_assets.ttl")
     kg_news   = Path(cfg.get("news",  {}).get("kg_out", "data/kg_news.ttl"))
     kg_ind    = Path(cfg.get("features",{}).get("indicators_out", "data/kg_indicators.ttl"))
-    kg_fund   = Path(cfg.get("fundamentals",{}).get("out", "data/kg_fundamentals.ttl"))
 
     gA = Graph(); gA.parse(kg_assets, format="turtle")
-    gN = Graph(); 
-    if kg_news.exists(): gN.parse(kg_news, format="turtle")
-    gI = Graph(); 
-    if kg_ind.exists():  gI.parse(kg_ind, format="turtle")
-    gF = Graph(); 
-    if kg_fund.exists(): gF.parse(kg_fund, format="turtle")
+    gN = Graph() if kg_news.exists() else None
+    if gN is not None: gN.parse(kg_news, format="turtle")
+    gI = Graph() if kg_ind.exists() else None
+    if gI is not None: gI.parse(kg_ind, format="turtle")
 
-    # Ticker entdecken
+    # Ticker
     tq = "PREFIX ex:<http://example.org/> SELECT DISTINCT ?s WHERE { ?p a ex:Price ; ex:ofAsset ?s . }"
     tickers = sorted({ str(r[0]).split("/")[-1] for r in gA.query(tq) })
-    print(tickers)
 
-    triples = set()
+    # Frühestes News-Datum je Ticker (für Coverage)
+    first_news_by_tk = {}
+    if gN is not None:
+        for tk in tickers:
+            first_news_by_tk[tk] = q_first_news_date(gN, tk)
 
-    # Iterate über (A,D)
-    for tk in tickers:
-        prices = q_prices_for_asset(gA, tk)  # Liste (d, close)
+    # Beispiele sammeln pro Ticker
+    examples_by_tk: dict[str, list[tuple[date, str, dict]]] = {tk: [] for tk in tickers}
+    for tk in tickers:  
+        prices = q_prices_for_asset(gA, tk)
         if not prices: continue
-        closes = {d:c for d,c in prices}
-
-        # Beobachtungszeitraum (letzte window_days abdeckend)
-        days = [d for d,_ in prices]
+        closes = {d: c for d, c in prices}
+        days = [d for d, _ in prices]
         if not days: continue
+
         start = max(days[0], (date.today() - timedelta(days=window_days)))
         obs_days = [d for d in days if start <= d <= date.today()]
 
         for d in obs_days:
-            # Label
             y = forward_label(closes, d, H=H, tau=tau)
-            if not y: 
-                continue  # optional: nur klare up/down Beispiele
+            if y is None:
+                continue  # nur klare up/down Beispiele
+            feats = features_for(gN, gI, tk, d, closes, first_news_by_tk.get(tk), win=win_news)
+            examples_by_tk[tk].append((d, y, feats))
 
-            A = URIRef(EX[tk]); D = _d_ent(d)
-            triples.add((_short(A), "ex:instanceOf", "ex:Asset"))
-            triples.add((_short(D), "ex:instanceOf", "ex:Day"))
+    # Balancing (Downsampling Majority pro Ticker)
+    triples = set()
+    def add(h, r, t): triples.add((h, r, t))
+    for tk, rows in examples_by_tk.items():
+        if not rows: continue
+        ups   = [r for r in rows if r[1] == "up"]
+        downs = [r for r in rows if r[1] == "down"]
+        if not ups or not downs or max_class_ratio is None:
+            picked = rows
+        else:
+            maj, minr = (ups, downs) if len(ups) > len(downs) else (downs, ups)
+            k = min(len(maj), int(math.ceil(len(minr) * float(max_class_ratio))))
+            maj = random.sample(maj, k) if len(maj) > k else maj
+            picked = minr + maj
 
-            # Zielrelation
-            rel = "ex:risesWithin_%dd" % H if y == "up" else "ex:fallsWithin_%dd" % H
-            triples.add((_short(A), rel, _short(D)))
+        A = _short(URIRef(EX[tk]))
+        # Emit (genau eine Kante je Feature-Art)
+        for d, y, f in picked:
+            D = f"ex:d_{d.isoformat()}"
+            add(A, "ex:instanceOf", "ex:Asset")  # Typisierung (nur in train schreiben)
+            add(D, "ex:instanceOf", "ex:Day")
 
-            # Features
-            f = features_for(gA, gN, gI, gF, tk, d, closes)
-            _emit_feature_edges(triples, _short(A), _short(D), f)
+            rel = f"ex:{'risesWithin' if y=='up' else 'fallsWithin'}_{H}d"
+            add(A, rel, D)
 
-   # Tag-Entitäten komplettieren für Sichtbarkeit
-    for h, r, t in list(triples):
-        if t.startswith("ex:d_"):
-            triples.add((t, "ex:instanceOf", "ex:Day"))
+            add(A, f"ex:hasTrend5d_{f['trend5d']}", D)
+            add(A, f"ex:hasRSI_{f['rsi']}", D)
+            add(A, f"ex:hasVol_{f['vol']}", D)
+            add(A, f"ex:hasNews7d_pos_{f['news_pos']}", D)   # Stärke positiv
+            add(A, f"ex:hasNews7d_neg_{f['news_neg']}", D)   # Stärke negativ
+            add(A, f"ex:hasNewsCoverage7d_{f['news_cov']}", D)  # full/partial/none
 
-    # Splits (zeitbasiert)
-    all_days = sorted({t for _,_,t in triples if t.startswith("ex:d_")})
-    if not all_days:
+    if not triples:
         print("⚠️ Keine Triples erzeugt – prüfe Daten/Schwellen.")
         return
+
+    # Typisierungen extrahieren (nur in train.tsv)
+    day_typings   = {(t, "ex:instanceOf", "ex:Day")   for _, _, t in triples if str(t).startswith("ex:d_")}
+    asset_typings = {(h, "ex:instanceOf", "ex:Asset") for h, _, _ in triples if not str(h).startswith("ex:d_")}
+
+    # Zeit-Splits
+    all_days = sorted({t for _, _, t in triples if str(t).startswith("ex:d_")})
     n = len(all_days)
-    cut1, cut2 = int(n*0.7), int(n*0.85)
-    train_days = set(all_days[:cut1]); valid_days = set(all_days[cut1:cut2]); test_days = set(all_days[cut2:])
+    cut1, cut2 = int(n * 0.7), int(n * 0.85)
+
+    def labels_present(days_subset: set[str]) -> bool:
+        labs = {r for h, r, t in triples if t in days_subset and ("risesWithin_" in r or "fallsWithin_" in r)}
+        return any("risesWithin_" in x for x in labs) and any("fallsWithin_" in x for x in labs)
+
+    while cut1 < n and not labels_present(set(all_days[:cut1])):
+        cut1 += max(1, n // 50)  # kleine Schritte
+    cut1 = min(cut1, n - 2)
+    cut2 = max(cut2, cut1 + 1)
+
+    train_days = set(all_days[:cut1])
+    valid_days = set(all_days[cut1:cut2])
+    test_days  = set(all_days[cut2:])
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    day_typings = {(t, "ex:instanceOf", "ex:Day")
-               for _,_,t in triples if t.startswith("ex:d_")}
-
-    today = date.today()
-    day_typings.add((f"ex:d_{today.isoformat()}", "ex:instanceOf", "ex:Day"))
-    asset_typings = {(f"ex:{tk}", "ex:instanceOf", "ex:Asset") for tk in tickers}
-
-    # 3) Beim Schreiben: alle Day/Asset-Typings NUR in train.tsv mitschreiben
-    def write(fname, days_set, include_typings=False):
+    def write(fname: str, days_set: set[str], include_typings: bool = False):
         p = out_dir / fname
         with p.open("w", encoding="utf-8") as f:
             if include_typings and fname == "train.tsv":
-                for h,r,t in sorted(day_typings):
-                    f.write(f"{h}\t{r}\t{t}\n")
-                for h,r,t in sorted(asset_typings):
-                    f.write(f"{h}\t{r}\t{t}\n")
-            for h,r,t in sorted(triples):
+                for h, r, t in sorted(day_typings):   f.write(f"{h}\t{r}\t{t}\n")
+                for h, r, t in sorted(asset_typings): f.write(f"{h}\t{r}\t{t}\n")
+            for h, r, t in sorted(triples):
                 if t in days_set:
                     f.write(f"{h}\t{r}\t{t}\n")
 
-    p_train = write("train.tsv", train_days, include_typings=True)
-    p_valid = write("valid.tsv", valid_days)
-    p_test  = write("test.tsv",  test_days)
+    write("train.tsv", train_days, include_typings=True)
+    write("valid.tsv", valid_days)
+    write("test.tsv",  test_days)
 
-    # in TXT for debug
-    p_trainTXT = write("train.txt", train_days, include_typings=True)
-    p_validTXT = write("valid.txt", valid_days)
-    p_testTXT  = write("test.txt",  test_days)
-
-    print_relation_counts("ALL", triples)
-
-    train_triples = read_tsv(out_dir/"train.tsv")
-    valid_triples = read_tsv(out_dir/"valid.tsv")
-    test_triples  = read_tsv(out_dir/"test.tsv")
-    # Für Splits: train_days / valid_days / test_days sind Sets mit Days,
-    # aber du musst die Triples filtern:
-    # train_triples = [t for t in triples if t[2] in train_days or t[0] in train_days]
-    # valid_triples = [t for t in triples if t[2] in valid_days or t[0] in valid_days]
-    # test_triples  = [t for t in triples if t[2] in test_days  or t[0] in test_days]
-
-    # print_relation_counts("TRAIN", train_triples)
-    # print_relation_counts("VALID", valid_triples)
-    # print_relation_counts("TEST",  test_triples)
+    # Kurz-Stats
+    from collections import Counter
+    def rel_counts(days_set): return Counter(r for h, r, t in triples if t in days_set)
+    print("[Split] train/valid/test days:", len(train_days), len(valid_days), len(test_days))
+    for name, days in [("train", train_days), ("valid", valid_days), ("test", test_days)]:
+        lbl = {k: v for k, v in rel_counts(days).items() if "Within_" in k}
+        print(f"[Labels {name}]", lbl)
 
 if __name__ == "__main__":
     main()
