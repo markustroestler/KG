@@ -1,7 +1,7 @@
 # export_triples.py – kompakt & MRR-orientiert
 from pathlib import Path
 from datetime import date, timedelta
-import yaml, math, random
+import yaml, math, random, re
 from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import XSD
 
@@ -19,17 +19,72 @@ def _short(u: URIRef | str) -> str:
     s = str(u); base = str(EX)
     return "ex:" + s[len(base):] if s.startswith(base) else s
 
+# NEW: symbol → ex:LABEL (ohne ^ . -)
+def _sym_to_ex(s: str) -> str:
+    s = str(s).upper()
+    s = s.replace("^", "")
+    s = re.sub(r"[^A-Z0-9]+", "_", s).strip("_")
+    return s  # ohne "ex:"; für SPARQL nutzen wir ex:{...}
+
+def _trading_days(closes: dict):
+    return sorted(closes.keys())
+
+def ret_trailing_td(closes: dict, d, k: int):
+    """Trailing Return über k Handelstage bis zum letzten verfügbaren Tag ≤ d."""
+    days = sorted(closes.keys())
+    # auf letzten bekannten Tag ≤ d snappen
+    prior = [x for x in days if x <= d]
+    if not prior:
+        return None
+    d_eff = prior[-1]
+    i = days.index(d_eff)
+    j = i - k
+    if j < 0:
+        return None
+    c0, c1 = closes[days[j]], closes[days[i]]
+    if c0 is None or c1 is None or c0 == 0:
+        return None
+    return (c1 / c0) - 1.0
+
+def bucket_rel_idx(diff: float | None):
+    if diff is None: return "na"
+    if diff <= -0.02: return "under"
+    if diff >=  0.02: return "out"
+    return "in"
+
+def prev_trading_day(closes: dict, d, max_back=5):
+    days = _trading_days(closes)
+    if d not in closes: return None
+    i = days.index(d)
+    if i == 0: return None
+    return days[i-1]
+
+def bucket_count(n: int):
+    if n <= 0: return "0"
+    if n <= 2: return "1_2"
+    if n <= 5: return "3_5"
+    return "6p"
+
+def dist_to_high_52w_bucket(closes: dict, d):
+    days = _trading_days(closes)
+    if d not in closes: return "na"
+    i = days.index(d)
+    # 252 Handelstage Rückblick (≈ 52 Wochen)
+    j = max(0, i - 251)
+    window = [closes[x] for x in days[j:i+1] if closes.get(x) is not None]
+    if not window: return "na"
+    c = closes[d]; hi = max(window)
+    if not c or not hi or hi == 0: return "na"
+    dist = (hi - c) / hi
+    if dist < 0.05:  return "near"
+    if dist < 0.15:  return "mid"
+    return "far"
+
 def bucket_cont(x: float | None, cuts: list[float], labels: list[str]) -> str:
     if x is None or math.isnan(x): return labels[0]
     for c, lab in zip(cuts, labels):
         if x <= c: return lab
     return labels[-1]
-
-def bucket_count(n: int) -> str:
-    if n <= 0: return "0"
-    if n <= 2: return "1_2"
-    if n <= 5: return "3_5"
-    return "6p"
 
 # -------------------- Queries --------------------
 def q_prices_for_asset(g: Graph, tk: str):
@@ -165,9 +220,34 @@ def main():
     gI = Graph() if kg_ind.exists() else None
     if gI is not None: gI.parse(kg_ind, format="turtle")
 
-    # Ticker
+    # ---- Ticker aus config (falls vorhanden), sonst aus KG ----
+    cfg_stocks = [ _sym_to_ex(s) for s in (cfg.get("stocks") or []) ]  # ohne "ex:"
+    # Alle mit Preisen im KG
     tq = "PREFIX ex:<http://example.org/> SELECT DISTINCT ?s WHERE { ?p a ex:Price ; ex:ofAsset ?s . }"
-    tickers = sorted({ str(r[0]).split("/")[-1] for r in gA.query(tq) })
+    present = { str(r[0]).split("/")[-1] for r in gA.query(tq) }
+    tickers = sorted([t for t in cfg_stocks if t in present]) if cfg_stocks else sorted(present)
+
+    # ---- Index-Closes laden (aus config.indices + aus index_map)  # NEW ----
+    cfg_indices = [ _sym_to_ex(s) for s in (cfg.get("indices") or []) ]
+    idx_map_cfg = ((cfg.get("features") or {}).get("index_map") or {})
+    idx_of = { _sym_to_ex(k): _sym_to_ex(v) for k, v in idx_map_cfg.items() if v }  # Asset(ex) -> Index(ex)
+    # sicherstellen, dass alle gemappten Indizes geladen werden
+    need_indices = sorted(set(cfg_indices) | set(idx_of.values()))
+    index_closes = {}
+    for idx in need_indices:
+        ps = q_prices_for_asset(gA, idx)
+        if ps:
+            index_closes[idx] = {d: c for d, c in ps}
+
+    # ---- Peers vorbereiten: einfach "alle anderen Stocks"  # NEW ----
+    peers_of = { tk: [p for p in tickers if p != tk] for tk in tickers }
+
+    # ---- Alle Asset-Closes (für peersUp1d)  # NEW ----
+    asset_closes = {}
+    for tk in tickers:
+        ps = q_prices_for_asset(gA, tk)
+        if ps:
+            asset_closes[tk] = {d: c for d, c in ps}
 
     # Frühestes News-Datum je Ticker (für Coverage)
     first_news_by_tk = {}
@@ -177,7 +257,7 @@ def main():
 
     # Beispiele sammeln pro Ticker
     examples_by_tk: dict[str, list[tuple[date, str, dict]]] = {tk: [] for tk in tickers}
-    for tk in tickers:  
+    for tk in tickers:
         prices = q_prices_for_asset(gA, tk)
         if not prices: continue
         closes = {d: c for d, c in prices}
@@ -191,7 +271,41 @@ def main():
             y = forward_label(closes, d, H=H, tau=tau)
             if y is None:
                 continue  # nur klare up/down Beispiele
+
+            # Basis-Features
             feats = features_for(gN, gI, tk, d, closes, first_news_by_tk.get(tk), win=win_news)
+
+            # --- NEW: relToIndex20d ---
+            rel_idx = "na"
+            idx_sym = idx_of.get(tk)
+            if idx_sym and idx_sym in index_closes:
+                r_a20 = ret_trailing_td(closes, d, int(e.get("rel_to_index_window_days", 20)))
+                r_i20 = ret_trailing_td(index_closes[idx_sym], d, int(e.get("rel_to_index_window_days", 20)))
+                rel_idx = bucket_rel_idx(None if (r_a20 is None or r_i20 is None) else (r_a20 - r_i20))
+
+            # --- NEW: peersUp1d (am Vortag) ---
+            up_bucket = "0"
+            prev_d = prev_trading_day(closes, d)
+            if prev_d:
+                up_cnt = 0
+                for p in peers_of.get(tk, []):
+                    pc = asset_closes.get(p)
+                    if not pc: continue
+                    prev_p = prev_trading_day(pc, prev_d)
+                    if prev_p and pc.get(prev_p) and pc.get(prev_d):
+                        r = pc[prev_d]/pc[prev_p] - 1.0
+                        if r > 0: up_cnt += 1
+                up_bucket = bucket_count(up_cnt)
+
+            # --- NEW: distToHigh52w ---
+            dist52 = dist_to_high_52w_bucket(closes, d)
+
+            feats.update({
+                "relToIndex20d": rel_idx,
+                "peersUp1d": up_bucket,
+                "distToHigh52w": dist52,
+            })
+
             examples_by_tk[tk].append((d, y, feats))
 
     # Balancing (Downsampling Majority pro Ticker)
@@ -225,6 +339,11 @@ def main():
             add(A, f"ex:hasNews7d_pos_{f['news_pos']}", D)   # Stärke positiv
             add(A, f"ex:hasNews7d_neg_{f['news_neg']}", D)   # Stärke negativ
             add(A, f"ex:hasNewsCoverage7d_{f['news_cov']}", D)  # full/partial/none
+
+            # --- NEW: drei neue Feature-Kanten ---
+            add(A, f"ex:relToIndex20d_{f['relToIndex20d']}", D)      # under|in|out|na
+            add(A, f"ex:peersUp1d_{f['peersUp1d']}", D)              # 0|1_2|3_5|6p
+            add(A, f"ex:distToHigh52w_{f['distToHigh52w']}", D)      # near|mid|far|na
 
     if not triples:
         print("⚠️ Keine Triples erzeugt – prüfe Daten/Schwellen.")

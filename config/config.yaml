@@ -24,16 +24,44 @@ stocks:
   - TSM
   - MU
   - QCOM
-  - ASML 
+  - ASML
 
 # market indices to include (yfinance symbols)
 indices:
-  - "^DJI"     # Dow Jones
+  - "^DJI"     # Dow Jones 30
   - "^GSPC"    # S&P 500
   - "^NDX"     # Nasdaq-100
+  - "^SOX"     # Philadelphia Semiconductor Index  ← NEU
+  - "^GDAXI"   # DAX                              ← NEU
+
+features:
+  index_map:
+    AAPL:  "^NDX"
+    MSFT:  "^NDX"
+    TSLA:  "^NDX"
+    BAYN_DE: "^GDAXI"     # BAYN.DE -> BAYN_DE im KG
+    # BTC_USD:            # absichtlich leer (kein Aktienindex)
+
+    NVDA:  "^SOX"
+    AMZN:  "^NDX"
+    GOOGL: "^NDX"
+    META:  "^NDX"
+
+    AVGO:  "^SOX"
+    AMD:   "^SOX"
+    INTC:  "^SOX"
+    ORCL:  "^GSPC"        # NYSE, nicht im NDX
+    ADBE:  "^NDX"
+    CRM:   "^DJI"         # Dow-Komponente
+    NFLX:  "^NDX"
+    IBM:   "^DJI"         # Dow-Komponente
+    TSM:   "^SOX"
+    MU:    "^SOX"
+    QCOM:  "^SOX"
+    ASML:  "^SOX"
   
 fetch:
-  lookback_days: 2000
+  lookback_days: 1500
   interval: "1d"
 
 trend:
@@ -71,7 +99,7 @@ reco:
     penalty_near_earnings: -0.5
 
 report:
-  news_window_days: 30        # Fenster für “interessante” Stocks
+  news_window_days: 500        # Fenster für “interessante” Stocks
   strong_threshold: 0.6      # Schwelle für strongPos
 
   # config/config.yaml  (add this block)
@@ -85,8 +113,7 @@ embeddings:
   batch_size: 1024
   valid_ratio: 0.05
   test_ratio: 0.05
-  window_days: 500        # use last N days of DailyTrend
-  holdout_days: 100       # keep last N days out for testing
+  window_days: 2000        # use last N days of DailyTrend
   target_relation: risesWithin_14d   # we'll predict which assets move up on a given date
   horizon_days: 14
   target_threshold: 0.01   # 2% Schwelle

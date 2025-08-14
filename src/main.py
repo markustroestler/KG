@@ -20,6 +20,7 @@ from fundamentals.fetch_fundamentals import main as fetch_fundamentals
 from embeddings.export_triples import main as export_kge_triples
 from embeddings.train_kge import main as train_kge
 from embeddings.score_up_today import main as score_up_today
+from embeddings.score_assets_at_day import main as score_assets_at_day
 
 def load_all_graphs(cfg: dict) -> Graph:
     g = Graph()
@@ -161,8 +162,8 @@ def main():
     # report_interesting(g_all, days=days, strong_thresh=strong)
     # run_reco(g_all)   # <= new line
 
-    # print("🧮 Export triples for embeddings…")
-    # export_kge_triples()
+    print("🧮 Export triples for embeddings…")
+    export_kge_triples()
 
     print("🧠 Train KGE model…")
     train_kge()
@@ -172,6 +173,10 @@ def main():
 
     print("🔮 Score candidates for today…")
     score_up_today()
+
+    print("Score assets at day")
+    score_assets_at_day()
+
 
 
 if __name__ == "__main__":
